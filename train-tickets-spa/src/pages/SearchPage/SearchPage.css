@@ -803,3 +803,26 @@
     gap: 4px;
   }
 }
+
+/* Сообщение об ошибке */
+.search-results__error {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 20px;
+  color: #991b1b;
+}
+
+.search-results__error-icon {
+  font-size: 20px;
+  flex-shrink: 0;
+}
+
+.search-results__error-text {
+  flex: 1;
+  font-size: 14px;
+}

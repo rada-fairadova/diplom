@@ -6,103 +6,8 @@ import TrainCard from '../../components/TrainCard/TrainCard';
 import LastTickets from '../../components/LastTickets/LastTickets';
 import './SearchPage.css';
 
-// Моковые данные поездов
-const mockTrains = [
-  {
-    id: '116C',
-    number: '116C',
-    name: 'Адлер → Санкт-Петербург',
-    fromCity: 'Москва',
-    fromStation: 'Курский вокзал',
-    toCity: 'Санкт-Петербург',
-    toStation: 'Ладожский вокзал',
-    departureTime: '2023-08-30T00:10:00',
-    arrivalTime: '2023-08-30T09:52:00',
-    departureDate: '30.08.2023',
-    arrivalDate: '30.08.2023',
-    duration: 582, // 9 часов 42 минуты
-    wagons: [
-      { type: 'sitting', price: 1920, availableSeats: 35 },
-      { type: 'platzkart', price: 2530, availableSeats: 24 },
-      { type: 'coupe', price: 3820, availableSeats: 15 },
-      { type: 'lux', price: 4950, availableSeats: 8 }
-    ],
-    hasWifi: true,
-    hasConditioner: true,
-    hasLinens: true,
-    selectingCount: 19
-  },
-  {
-    id: '117C',
-    number: '117C',
-    name: 'Москва → Казань',
-    fromCity: 'Москва',
-    fromStation: 'Казанский вокзал',
-    toCity: 'Казань',
-    toStation: 'Казанский вокзал',
-    departureTime: '2023-08-30T11:30:00',
-    arrivalTime: '2023-08-30T20:15:00',
-    departureDate: '30.08.2023',
-    arrivalDate: '30.08.2023',
-    duration: 525, // 8 часов 45 минут
-    wagons: [
-      { type: 'sitting', price: 1800, availableSeats: 42 },
-      { type: 'platzkart', price: 2400, availableSeats: 32 },
-      { type: 'coupe', price: 3600, availableSeats: 18 }
-    ],
-    hasWifi: false,
-    hasConditioner: true,
-    hasLinens: true,
-    selectingCount: 7
-  },
-  {
-    id: '118C',
-    number: '118C',
-    name: 'Москва → Нижний Новгород',
-    fromCity: 'Москва',
-    fromStation: 'Курский вокзал',
-    toCity: 'Нижний Новгород',
-    toStation: 'Московский вокзал',
-    departureTime: '2023-08-30T15:45:00',
-    arrivalTime: '2023-08-30T21:30:00',
-    departureDate: '30.08.2023',
-    arrivalDate: '30.08.2023',
-    duration: 345, // 5 часов 45 минут
-    wagons: [
-      { type: 'sitting', price: 1500, availableSeats: 28 },
-      { type: 'platzkart', price: 2200, availableSeats: 20 },
-      { type: 'coupe', price: 3200, availableSeats: 12 }
-    ],
-    hasWifi: true,
-    hasConditioner: true,
-    hasLinens: false,
-    selectingCount: 3
-  },
-  {
-    id: '119C',
-    number: '119C',
-    name: 'Москва → Сочи',
-    fromCity: 'Москва',
-    fromStation: 'Курский вокзал',
-    toCity: 'Сочи',
-    toStation: 'Сочи',
-    departureTime: '2023-08-30T19:20:00',
-    arrivalTime: '2023-08-31T10:45:00',
-    departureDate: '30.08.2023',
-    arrivalDate: '31.08.2023',
-    duration: 925, // 15 часов 25 минут
-    wagons: [
-      { type: 'sitting', price: 2100, availableSeats: 15 },
-      { type: 'platzkart', price: 3500, availableSeats: 18 },
-      { type: 'coupe', price: 5200, availableSeats: 10 },
-      { type: 'lux', price: 7800, availableSeats: 4 }
-    ],
-    hasWifi: true,
-    hasConditioner: true,
-    hasLinens: true,
-    selectingCount: 12
-  }
-];
+// API базовый URL
+const API_BASE_URL = 'https://students.netoservices.ru/fe-diplom';
 
 // Ценовые категории
 const priceRanges = [
@@ -115,10 +20,10 @@ const priceRanges = [
 // Типы вагонов
 const wagonTypes = [
   { id: 'all', label: 'Все типы', icon: '🚂' },
-  { id: 'sitting', label: 'Сидячий', icon: '💺' },
-  { id: 'platzkart', label: 'Плацкарт', icon: '🛌' },
-  { id: 'coupe', label: 'Купе', icon: '🚂' },
-  { id: 'lux', label: 'Люкс', icon: '⭐' },
+  { id: 'first', label: 'Люкс', icon: '⭐' },
+  { id: 'second', label: 'Купе', icon: '🚂' },
+  { id: 'third', label: 'Плацкарт', icon: '🛌' },
+  { id: 'fourth', label: 'Сидячий', icon: '💺' },
 ];
 
 function SearchPage() {
@@ -128,6 +33,7 @@ function SearchPage() {
   const [trains, setTrains] = useState([]);
   const [filteredTrains, setFilteredTrains] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [filters, setFilters] = useState({
     priceRange: 'all',
     wagonType: 'all',
@@ -139,14 +45,117 @@ function SearchPage() {
   const [sortBy, setSortBy] = useState('departureTime');
 
   useEffect(() => {
-    // Симуляция загрузки данных
-    setLoading(true);
-    setTimeout(() => {
-      setTrains(mockTrains);
-      setFilteredTrains(mockTrains);
-      setLoading(false);
-    }, 1000);
-  }, []);
+    // Получаем параметры поиска из контекста или из URL
+    const fetchTrains = async () => {
+      if (!searchParams) {
+        setError('Параметры поиска не указаны');
+        setLoading(false);
+        return;
+      }
+
+      try {
+        setLoading(true);
+        setError(null);
+
+        // Формируем параметры для API
+        const params = new URLSearchParams({
+          from_city_id: searchParams.fromId || '',
+          to_city_id: searchParams.toId || '',
+          date_start: searchParams.departureDate || '',
+          date_end: searchParams.departureDate || '',
+          have_first_class: true,
+          have_second_class: true,
+          have_third_class: true,
+          have_fourth_class: true,
+          have_wifi: false,
+          have_air_conditioning: false,
+          have_express: false
+        });
+
+        console.log('Fetching trains with params:', params.toString());
+
+        const response = await fetch(`${API_BASE_URL}/routes?${params}`, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        });
+
+        if (!response.ok) {
+          throw new Error(`Ошибка API: ${response.status}`);
+        }
+
+        const data = await response.json();
+        console.log('API response:', data);
+
+        if (data && Array.isArray(data.items)) {
+          const formattedTrains = data.items.map(item => ({
+            id: item.departure._id || item.departure.train._id,
+            number: item.departure.train._id || item.departure.train.name,
+            name: `${item.departure.from.city.name} → ${item.departure.to.city.name}`,
+            fromCity: item.departure.from.city.name,
+            fromStation: item.departure.from.railway_station_name,
+            toCity: item.departure.to.city.name,
+            toStation: item.departure.to.railway_station_name,
+            departureTime: item.departure.from.datetime,
+            arrivalTime: item.departure.to.datetime,
+            departureDate: new Date(item.departure.from.datetime).toLocaleDateString('ru-RU'),
+            arrivalDate: new Date(item.departure.to.datetime).toLocaleDateString('ru-RU'),
+            duration: item.departure.duration || Math.round(
+              (new Date(item.departure.to.datetime) - new Date(item.departure.from.datetime)) / 60000
+            ),
+            priceInfo: item.departure, // Сохраняем всю информацию о ценах
+            wagons: [
+              ...(item.departure.have_first_class ? [{
+                type: 'first',
+                price: item.departure.price_info?.first?.bottom_price || 0,
+                availableSeats: item.departure.available_seats_info?.first || 0,
+                topPrice: item.departure.price_info?.first?.top_price || 0
+              }] : []),
+              ...(item.departure.have_second_class ? [{
+                type: 'second',
+                price: item.departure.price_info?.second?.bottom_price || 0,
+                availableSeats: item.departure.available_seats_info?.second || 0,
+                topPrice: item.departure.price_info?.second?.top_price || 0
+              }] : []),
+              ...(item.departure.have_third_class ? [{
+                type: 'third',
+                price: item.departure.price_info?.third?.bottom_price || 0,
+                availableSeats: item.departure.available_seats_info?.third || 0,
+                topPrice: item.departure.price_info?.third?.top_price || 0
+              }] : []),
+              ...(item.departure.have_fourth_class ? [{
+                type: 'fourth',
+                price: item.departure.price_info?.fourth?.bottom_price || 0,
+                availableSeats: item.departure.available_seats_info?.fourth || 0,
+                topPrice: item.departure.price_info?.fourth?.top_price || 0
+              }] : [])
+            ].filter(wagon => wagon.price > 0), // Фильтруем вагоны с нулевой ценой
+            hasWifi: item.departure.have_wifi,
+            hasConditioner: item.departure.have_air_conditioning,
+            hasLinens: item.departure.have_linens_included,
+            selectingCount: Math.floor(Math.random() * 20) + 1 // Генерируем случайное число
+          }));
+
+          setTrains(formattedTrains);
+          setFilteredTrains(formattedTrains);
+        } else {
+          setTrains([]);
+          setFilteredTrains([]);
+        }
+      } catch (err) {
+        console.error('Ошибка при загрузке поездов:', err);
+        setError('Не удалось загрузить поезда. Пожалуйста, попробуйте позже.');
+        // Временно используем моковые данные для демонстрации
+        setTrains(getMockTrains());
+        setFilteredTrains(getMockTrains());
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchTrains();
+  }, [searchParams]);
 
   useEffect(() => {
     // Фильтрация поездов
@@ -155,9 +164,7 @@ function SearchPage() {
     // Фильтр по типу вагона
     if (filters.wagonType !== 'all') {
       filtered = filtered.filter(train => {
-        // Проверяем, есть ли в поезде вагоны выбранного типа
-        const hasWagonType = train.wagons.some(wagon => wagon.type === filters.wagonType);
-        return hasWagonType;
+        return train.wagons.some(wagon => wagon.type === filters.wagonType);
       });
     }
 
@@ -165,7 +172,6 @@ function SearchPage() {
     const priceRange = priceRanges.find(range => range.id === filters.priceRange);
     if (priceRange && priceRange.id !== 'all') {
       filtered = filtered.filter(train => {
-        // Находим минимальную цену среди вагонов нужного типа (если тип выбран) или среди всех вагонов
         const relevantWagons = filters.wagonType !== 'all' 
           ? train.wagons.filter(wagon => wagon.type === filters.wagonType)
           : train.wagons;
@@ -255,26 +261,76 @@ function SearchPage() {
     });
   };
 
-  const handleTrainSelect = (train) => {
-    // Сохраняем выбранный поезд в контекст
-    setSelectedTrain(train);
-    
-    // Выбираем первый доступный вагон по умолчанию
-    if (train.wagons && train.wagons.length > 0) {
-      setSelectedWagon(train.wagons[0]);
+  const handleTrainSelect = async (train) => {
+    try {
+      // Загружаем детальную информацию о поезде
+      const response = await fetch(`${API_BASE_URL}/routes/${train.id}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error('Не удалось загрузить детальную информацию о поезде');
+      }
+
+      const trainDetails = await response.json();
+      
+      // Сохраняем выбранный поезд в контекст
+      const selectedTrain = {
+        id: train.id,
+        number: train.number,
+        name: train.name,
+        fromCity: train.fromCity,
+        fromStation: train.fromStation,
+        toCity: train.toCity,
+        toStation: train.toStation,
+        departureTime: train.departureTime,
+        arrivalTime: train.arrivalTime,
+        departureDate: train.departureDate,
+        arrivalDate: train.arrivalDate,
+        duration: train.duration,
+        hasWifi: train.hasWifi,
+        hasConditioner: train.hasConditioner,
+        hasLinens: train.hasLinens,
+        priceInfo: train.priceInfo,
+        detailedInfo: trainDetails
+      };
+      
+      setSelectedTrain(selectedTrain);
+      
+      // Переходим на страницу выбора мест
+      navigate('/seats');
+    } catch (error) {
+      console.error('Ошибка при выборе поезда:', error);
+      // Если API не работает, используем базовые данные
+      const selectedTrain = {
+        id: train.id,
+        number: train.number,
+        name: train.name,
+        fromCity: train.fromCity,
+        fromStation: train.fromStation,
+        toCity: train.toCity,
+        toStation: train.toStation,
+        departureTime: train.departureTime,
+        arrivalTime: train.arrivalTime,
+        departureDate: train.departureDate,
+        arrivalDate: train.arrivalDate,
+        duration: train.duration,
+        hasWifi: train.hasWifi,
+        hasConditioner: train.hasConditioner,
+        hasLinens: train.hasLinens,
+        priceInfo: train.priceInfo
+      };
+      
+      setSelectedTrain(selectedTrain);
+      navigate('/seats');
     }
-    
-    // Сбрасываем выбранные места
-    setSelectedSeats([]);
-    
-    navigate('/seats');
   };
 
   // Функция для обработки клика на последний билет
   const handleLastTicketClick = (ticketData) => {
-    console.log('Клик на последний билет:', ticketData);
-    
-    // Создаем объект поезда из данных билета
     const trainFromTicket = {
       id: `${ticketData.trainNumber}-${Date.now()}`,
       number: ticketData.trainNumber,
@@ -285,12 +341,12 @@ function SearchPage() {
       toStation: ticketData.toStation,
       departureTime: ticketData.departureDate ? 
         `${ticketData.departureDate}T${ticketData.departureTime || '00:00'}:00` : 
-        '2023-12-31T00:00:00',
+        new Date().toISOString(),
       arrivalTime: ticketData.arrivalDate ? 
         `${ticketData.arrivalDate}T${ticketData.arrivalTime || '00:00'}:00` : 
-        '2023-12-31T23:59:00',
-      departureDate: ticketData.departureDate || '31.12.2023',
-      arrivalDate: ticketData.arrivalDate || '31.12.2023',
+        new Date(Date.now() + 5 * 60 * 60 * 1000).toISOString(),
+      departureDate: ticketData.departureDate || new Date().toLocaleDateString('ru-RU'),
+      arrivalDate: ticketData.arrivalDate || new Date(Date.now() + 5 * 60 * 60 * 1000).toLocaleDateString('ru-RU'),
       duration: ticketData.duration || 300,
       wagons: ticketData.wagonType ? [
         { 
@@ -299,7 +355,7 @@ function SearchPage() {
           availableSeats: 10 
         }
       ] : [
-        { type: 'coupe', price: ticketData.price || 2000, availableSeats: 10 }
+        { type: 'second', price: ticketData.price || 2000, availableSeats: 10 }
       ],
       hasWifi: true,
       hasConditioner: true,
@@ -307,19 +363,84 @@ function SearchPage() {
       selectingCount: 5
     };
     
-    // Сохраняем в контекст
     setSelectedTrain(trainFromTicket);
-    
-    // Выбираем первый вагон
-    if (trainFromTicket.wagons && trainFromTicket.wagons.length > 0) {
-      setSelectedWagon(trainFromTicket.wagons[0]);
-    }
-    
-    // Сбрасываем выбранные места
-    setSelectedSeats([]);
-    
-    // Переходим на страницу выбора мест
     navigate('/seats');
+  };
+
+  // Функция для получения моковых данных (на случай ошибки API)
+  const getMockTrains = () => {
+    return [
+      {
+        id: '116C',
+        number: '116C',
+        name: 'Москва → Санкт-Петербург',
+        fromCity: 'Москва',
+        fromStation: 'Ленинградский вокзал',
+        toCity: 'Санкт-Петербург',
+        toStation: 'Московский вокзал',
+        departureTime: '2024-12-30T22:30:00',
+        arrivalTime: '2024-12-31T08:45:00',
+        departureDate: '30.12.2024',
+        arrivalDate: '31.12.2024',
+        duration: 615, // 10 часов 15 минут
+        wagons: [
+          { type: 'fourth', price: 1920, availableSeats: 35 },
+          { type: 'third', price: 2530, availableSeats: 24 },
+          { type: 'second', price: 3820, availableSeats: 15 },
+          { type: 'first', price: 4950, availableSeats: 8 }
+        ],
+        hasWifi: true,
+        hasConditioner: true,
+        hasLinens: true,
+        selectingCount: 19
+      },
+      {
+        id: '117C',
+        number: '117C',
+        name: 'Москва → Казань',
+        fromCity: 'Москва',
+        fromStation: 'Казанский вокзал',
+        toCity: 'Казань',
+        toStation: 'Казанский вокзал',
+        departureTime: '2024-12-30T11:30:00',
+        arrivalTime: '2024-12-30T20:15:00',
+        departureDate: '30.12.2024',
+        arrivalDate: '30.12.2024',
+        duration: 525, // 8 часов 45 минут
+        wagons: [
+          { type: 'fourth', price: 1800, availableSeats: 42 },
+          { type: 'third', price: 2400, availableSeats: 32 },
+          { type: 'second', price: 3600, availableSeats: 18 }
+        ],
+        hasWifi: false,
+        hasConditioner: true,
+        hasLinens: true,
+        selectingCount: 7
+      },
+      {
+        id: '118C',
+        number: '118C',
+        name: 'Москва → Нижний Новгород',
+        fromCity: 'Москва',
+        fromStation: 'Курский вокзал',
+        toCity: 'Нижний Новгород',
+        toStation: 'Московский вокзал',
+        departureTime: '2024-12-30T15:45:00',
+        arrivalTime: '2024-12-30T21:30:00',
+        departureDate: '30.12.2024',
+        arrivalDate: '30.12.2024',
+        duration: 345, // 5 часов 45 минут
+        wagons: [
+          { type: 'fourth', price: 1500, availableSeats: 28 },
+          { type: 'third', price: 2200, availableSeats: 20 },
+          { type: 'second', price: 3200, availableSeats: 12 }
+        ],
+        hasWifi: true,
+        hasConditioner: true,
+        hasLinens: false,
+        selectingCount: 3
+      }
+    ];
   };
 
   const timeRanges = [
@@ -520,6 +641,14 @@ function SearchPage() {
             </div>
           </div>
 
+          {/* Сообщение об ошибке */}
+          {error && (
+            <div className="search-results__error">
+              <div className="search-results__error-icon">⚠️</div>
+              <div className="search-results__error-text">{error}</div>
+            </div>
+          )}
+
           {/* Статистика фильтров */}
           {(filters.wagonType !== 'all' || filters.priceRange !== 'all' || filters.departureTime !== 'any' || filters.hasWifi || filters.hasConditioner || filters.hasLinens) && (
             <div className="filters-summary">
@@ -604,7 +733,6 @@ function SearchPage() {
               </div>
             ) : filteredTrains.length > 0 ? (
               filteredTrains.map(train => {
-                // Получаем минимальную цену для этого поезда с учетом типа вагона
                 const minPrice = getTrainMinPrice(train, filters.wagonType);
                 const hasValidPrice = minPrice !== Infinity;
                 
@@ -613,7 +741,6 @@ function SearchPage() {
                     key={train.id}
                     train={train}
                     onSelect={handleTrainSelect}
-                    // Передаем информацию о фильтрах для отображения правильных цен
                     filteredWagonType={filters.wagonType !== 'all' ? filters.wagonType : null}
                     showPriceRange={hasValidPrice}
                   />
@@ -624,7 +751,7 @@ function SearchPage() {
                 <div className="search-results__empty-icon">🔍</div>
                 <h3 className="search-results__empty-title">Поезда не найдены</h3>
                 <p className="search-results__empty-text">
-                  Попробуйте изменить параметры фильтров
+                  {error ? error : 'Попробуйте изменить параметры фильтров или даты'}
                 </p>
                 <button 
                   className="search-results__empty-button"
