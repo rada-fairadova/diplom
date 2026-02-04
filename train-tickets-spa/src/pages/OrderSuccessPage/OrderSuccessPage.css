@@ -669,3 +669,362 @@
     height: 150px;
   }
 }
+
+/* Состояния загрузки и ошибки */
+.order-success-page.loading,
+.order-success-page.error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 60vh;
+  text-align: center;
+  padding: 40px 20px;
+}
+
+.loading-spinner {
+  width: 50px;
+  height: 50px;
+  border: 4px solid #e0f2fe;
+  border-top-color: #3b82f6;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-bottom: 20px;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.error-message {
+  background: white;
+  padding: 40px;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  max-width: 500px;
+  width: 100%;
+}
+
+.error-message h2 {
+  margin-bottom: 16px;
+  color: #dc2626;
+}
+
+.error-message p {
+  margin-bottom: 24px;
+  color: #666;
+}
+
+.back-btn {
+  padding: 12px 24px;
+  background: #3b82f6;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.back-btn:hover {
+  background: #2563eb;
+}
+
+/* API ошибка */
+.order-success__api-error {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 8px;
+  padding: 16px;
+  margin: 20px 0;
+  color: #991b1b;
+}
+
+.order-success__api-error-icon {
+  font-size: 20px;
+  flex-shrink: 0;
+}
+
+.order-success__api-error-text {
+  flex: 1;
+  font-size: 14px;
+}
+
+.order-success__api-error-text small {
+  color: #9ca3af;
+  display: block;
+  margin-top: 4px;
+}
+
+/* Статус заказа */
+.order-success__order-status {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 0;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.order-success__status-value {
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.order-success__status-value--paid {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+.order-success__status-value--pending {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.order-success__status-value--confirmed {
+  background: #dbeafe;
+  color: #1e40af;
+}
+
+/* Карточка статуса заказа */
+.order-success__status-card {
+  background: white;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  margin-top: 24px;
+}
+
+.order-success__status-card-title {
+  font-size: 16px;
+  font-weight: 600;
+  margin-bottom: 16px;
+  color: #374151;
+}
+
+.order-success__status-timeline {
+  display: flex;
+  justify-content: space-between;
+  position: relative;
+}
+
+.order-success__status-timeline::before {
+  content: '';
+  position: absolute;
+  top: 20px;
+  left: 20px;
+  right: 20px;
+  height: 2px;
+  background: #e5e7eb;
+  z-index: 1;
+}
+
+.order-success__status-step {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  position: relative;
+  z-index: 2;
+  flex: 1;
+}
+
+.order-success__status-step-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: #f3f4f6;
+  color: #9ca3af;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  margin-bottom: 8px;
+  border: 2px solid #e5e7eb;
+}
+
+.order-success__status-step.active .order-success__status-step-icon {
+  background: #3b82f6;
+  color: white;
+  border-color: #3b82f6;
+}
+
+.order-success__status-step-text {
+  font-size: 12px;
+  text-align: center;
+  color: #9ca3af;
+  max-width: 80px;
+}
+
+.order-success__status-step.active .order-success__status-step-text {
+  color: #374151;
+  font-weight: 500;
+}
+
+/* Чат поддержки */
+.order-success__support-chat {
+  margin-top: 16px;
+}
+
+.order-success__support-chat-btn {
+  width: 100%;
+  padding: 12px;
+  background: #10b981;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.order-success__support-chat-btn:hover {
+  background: #059669;
+}
+
+/* Кнопка скачивания */
+.order-success__action--download {
+  background: #8b5cf6;
+}
+
+.order-success__action--download:hover {
+  background: #7c3aed;
+}
+
+/* Стили для печати */
+.print-only {
+  display: none;
+}
+
+@media print {
+  .order-success-page__sidebar,
+  .order-success__actions,
+  .order-success__rating,
+  .order-success__header,
+  .order-success__info,
+  .order-success__message,
+  .order-success__instructions {
+    display: none !important;
+  }
+  
+  .print-only {
+    display: block !important;
+  }
+  
+  .order-success__print-details {
+    display: block !important;
+    border: 2px solid #000;
+    padding: 30px;
+    margin-top: 20px;
+    background: white;
+  }
+  
+  .order-success__print-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 30px;
+    border-bottom: 2px solid #000;
+    padding-bottom: 15px;
+  }
+  
+  .order-success__print-title {
+    font-size: 24px;
+    margin: 0;
+    color: #000;
+  }
+  
+  .order-success__print-order-number {
+    font-size: 16px;
+    font-weight: 600;
+  }
+  
+  .order-success__print-trip {
+    margin: 25px 0;
+    padding: 20px;
+    border: 1px solid #666;
+    border-radius: 8px;
+  }
+  
+  .order-success__print-station {
+    margin: 15px 0;
+  }
+  
+  .order-success__print-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 30px;
+    padding-top: 20px;
+    border-top: 2px dashed #666;
+  }
+  
+  .order-success__print-qr-placeholder {
+    width: 100px;
+    height: 100px;
+    border: 1px solid #000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+  }
+  
+  .order-success__print-total {
+    font-size: 18px;
+    font-weight: bold;
+  }
+  
+  body {
+    background: white !important;
+    color: black !important;
+  }
+}
+
+/* Адаптивные стили */
+@media (max-width: 768px) {
+  .order-success-page__container {
+    flex-direction: column;
+  }
+  
+  .order-success-page__sidebar {
+    order: -1;
+    margin-bottom: 24px;
+  }
+  
+  .order-success__actions {
+    flex-direction: column;
+    gap: 12px;
+  }
+  
+  .order-success__action {
+    width: 100%;
+  }
+  
+  .order-success__status-timeline::before {
+    display: none;
+  }
+  
+  .order-success__status-timeline {
+    flex-direction: column;
+    gap: 16px;
+  }
+  
+  .order-success__status-step {
+    flex-direction: row;
+    gap: 12px;
+    justify-content: flex-start;
+  }
+  
+  .order-success__status-step-icon {
+    margin-bottom: 0;
+  }
+}

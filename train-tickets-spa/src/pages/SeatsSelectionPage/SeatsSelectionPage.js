@@ -1,100 +1,173 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useTicket } from '../../context/TicketContext';
+import { trainApi } from '../../services/api';
 import './SeatsSelectionPage.css';
 
-// Моковые данные вагонов
-const mockWagons = [
-  {
-    id: 'sitting-1',
-    number: 1,
-    type: 'sitting',
-    name: 'Сидячий',
-    totalSeats: 60,
-    availableSeats: 35,
-    price: 1920,
-    features: ['Сидячие места', 'Кондиционер', 'Розетки'],
-    icon: '💺'
+// Типы вагонов с соответствием API
+const wagonTypesConfig = [
+  { 
+    type: 'lux', 
+    name: 'Люкс', 
+    icon: '⭐',
+    features: ['2 места в купе', 'Душ/туалет', 'ТВ', 'Кондиционер', 'Белье включено'],
+    seatsInfo: 'Отдельные купе с повышенным комфортом',
+    seatsPerRow: 2,
+    totalSeats: 18
   },
-  {
-    id: 'platzkart-2',
-    number: 2,
-    type: 'platzkart',
-    name: 'Плацкарт',
-    totalSeats: 54,
-    availableSeats: 24,
-    price: 2530,
-    features: ['54 места в вагоне', 'Белье включено', 'Общие розетки'],
-    icon: '🛌'
-  },
-  {
-    id: 'coupe-3',
-    number: 3,
-    type: 'coupe',
-    name: 'Купе',
-    totalSeats: 36,
-    availableSeats: 15,
-    price: 3820,
+  { 
+    type: 'coupe', 
+    name: 'Купе', 
+    icon: '🚂',
     features: ['4 места в купе', 'Кондиционер', 'Розетки', 'Белье включено'],
-    icon: '🚂'
+    seatsInfo: 'Закрытые купе по 4 места',
+    seatsPerRow: 4,
+    totalSeats: 36
   },
-  {
-    id: 'lux-4',
-    number: 4,
-    type: 'lux',
-    name: 'Люкс',
-    totalSeats: 18,
-    availableSeats: 8,
-    price: 4950,
-    features: ['2 места в купе', 'Кондиционер', 'Душ/туалет', 'ТВ', 'Белье включено'],
-    icon: '⭐'
+  { 
+    type: 'platzkart', 
+    name: 'Плацкарт', 
+    icon: '🛌',
+    features: ['54 места в вагоне', 'Белье включено', 'Общие розетки'],
+    seatsInfo: 'Открытое пространство, боковые и нижние места',
+    seatsPerRow: 9,
+    totalSeats: 54
+  },
+  { 
+    type: 'sitting', 
+    name: 'Сидячий', 
+    icon: '💺',
+    features: ['Сидячие места', 'Кондиционер', 'Розетки'],
+    seatsInfo: 'Удобные сидячие места с откидными столиками',
+    seatsPerRow: 6,
+    totalSeats: 60
   }
 ];
 
 function SeatsSelectionPage() {
   const navigate = useNavigate();
-  const { setSelectedTrain, setSelectedWagon, setSelectedSeats } = useTicket();
+  const location = useLocation();
+  const { selectedTrain, setSelectedWagon, setSelectedSeats } = useTicket();
   
   const [selectedWagon, setSelectedWagonState] = useState(null);
   const [selectedSeats, setSelectedSeatsState] = useState([]);
-  const [wagons, setWagons] = useState(mockWagons);
-  const [loading, setLoading] = useState(false);
-  const [tripInfo] = useState({
-    trainNumber: '123А',
-    trainName: 'Стрела',
-    fromCity: 'Москва',
-    toCity: 'Санкт-Петербург',
-    fromStation: 'Москва (Ленинградский вокзал)',
-    toStation: 'Санкт-Петербург (Московский вокзал)',
-    departureDate: '12 декабря 2024',
-    arrivalDate: '13 декабря 2024',
-    departureTime: '22:30',
-    arrivalTime: '08:45'
-  });
+  const [availableWagons, setAvailableWagons] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [seatMap, setSeatMap] = useState([]);
 
-  // Фейковая загрузка данных
+  // Загрузка данных о вагонах
   useEffect(() => {
-    setLoading(true);
-    const timer = setTimeout(() => {
-      setLoading(false);
-      if (!selectedWagon && wagons.length > 0) {
-        setSelectedWagonState(wagons[0]); // Автоматически выбираем первый вагон
-        console.log('Автоматически выбран первый вагон:', wagons[0]);
+    const fetchSeatsData = async () => {
+      if (!selectedTrain) {
+        navigate('/search');
+        return;
       }
-    }, 300);
-    return () => clearTimeout(timer);
-  }, []);
+
+      try {
+        setLoading(true);
+        setError(null);
+
+        console.log('Загружаем места для поезда:', selectedTrain);
+
+        // Используем вагоны из выбранного поезда
+        if (selectedTrain.wagons && selectedTrain.wagons.length > 0) {
+          // Преобразуем вагоны из поезда
+          const wagons = selectedTrain.wagons.map(wagon => {
+            const wagonType = wagonTypesConfig.find(w => 
+              w.type === wagon.type
+            ) || wagonTypesConfig[1]; // По умолчанию купе
+
+            return {
+              id: wagon.id || `wagon-${wagon.type}-${Math.random()}`,
+              number: wagon.number || wagonTypesConfig.findIndex(w => w.type === wagon.type) + 1,
+              type: wagon.type,
+              name: wagonType.name,
+              totalSeats: wagonType.totalSeats,
+              availableSeats: wagon.availableSeats || Math.floor(Math.random() * 20) + 10,
+              price: wagon.price || getDefaultPrice(wagon.type),
+              features: wagonType.features,
+              icon: wagonType.icon,
+              seatsPerRow: wagonType.seatsPerRow
+            };
+          });
+
+          console.log('Сформированные вагоны:', wagons);
+          setAvailableWagons(wagons);
+
+          // Автоматически выбираем первый вагон
+          if (wagons.length > 0) {
+            handleWagonSelect(wagons[0]);
+          }
+        } else {
+          // Если нет вагонов в поезде, используем моковые данные
+          setAvailableWagons(getMockWagons());
+          if (getMockWagons().length > 0) {
+            handleWagonSelect(getMockWagons()[0]);
+          }
+        }
+      } catch (err) {
+        console.error('Ошибка при загрузке мест:', err);
+        setError('Не удалось загрузить информацию о местах');
+        // Используем моковые данные в качестве резервного варианта
+        setAvailableWagons(getMockWagons());
+        if (getMockWagons().length > 0) {
+          handleWagonSelect(getMockWagons()[0]);
+        }
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchSeatsData();
+  }, [selectedTrain, navigate]);
+
+  // Генерация карты мест при выборе вагона
+  useEffect(() => {
+    if (!selectedWagon) return;
+
+    // Генерируем карту мест для выбранного вагона
+    const generateSeatMap = () => {
+      const seats = [];
+      const occupiedSeats = generateOccupiedSeats(selectedWagon.totalSeats, selectedWagon.availableSeats);
+      
+      for (let i = 1; i <= selectedWagon.totalSeats; i++) {
+        seats.push({
+          number: i,
+          available: !occupiedSeats.includes(i),
+          price: selectedWagon.price,
+          class: selectedWagon.type
+        });
+      }
+      
+      return seats;
+    };
+
+    const newSeatMap = generateSeatMap();
+    setSeatMap(newSeatMap);
+    setSelectedSeatsState([]); // Сбрасываем выбранные места при смене вагона
+    
+    console.log(`Сгенерирована карта мест для вагона ${selectedWagon.type}:`, newSeatMap.length, 'мест');
+  }, [selectedWagon]);
 
   const handleWagonSelect = (wagon) => {
     console.log('Выбран вагон:', wagon);
     setSelectedWagonState(wagon);
-    setSelectedSeatsState([]);
   };
 
   const handleSeatSelect = (seatNumber) => {
+    // Проверяем, доступно ли место
+    const seat = seatMap.find(s => s.number === seatNumber);
+    if (!seat || !seat.available) {
+      alert('Это место уже занято или недоступно');
+      return;
+    }
+
     if (selectedSeats.includes(seatNumber)) {
+      // Убираем место из выбранных
       setSelectedSeatsState(selectedSeats.filter(s => s !== seatNumber));
     } else {
+      // Добавляем место в выбранные
       if (selectedSeats.length < 4) {
         setSelectedSeatsState([...selectedSeats, seatNumber]);
       } else {
@@ -103,9 +176,26 @@ function SeatsSelectionPage() {
     }
   };
 
+  const generateOccupiedSeats = (totalSeats, availableSeats) => {
+    const occupiedCount = totalSeats - availableSeats;
+    const occupiedSeats = [];
+    
+    // Генерируем случайные занятые места
+    for (let i = 0; i < occupiedCount; i++) {
+      let seat;
+      do {
+        seat = Math.floor(Math.random() * totalSeats) + 1;
+      } while (occupiedSeats.includes(seat));
+      occupiedSeats.push(seat);
+    }
+    
+    return occupiedSeats;
+  };
+
   const calculateTotalPrice = () => {
     if (!selectedWagon || selectedSeats.length === 0) return 0;
-    return selectedWagon.price * selectedSeats.length;
+    
+    return selectedSeats.length * selectedWagon.price;
   };
 
   const handleContinue = () => {
@@ -114,44 +204,133 @@ function SeatsSelectionPage() {
       return;
     }
     
-    // Сохраняем данные поезда в контекст
-    const trainData = {
-      number: tripInfo.trainNumber,
-      name: tripInfo.trainName,
-      fromCity: tripInfo.fromCity,
-      toCity: tripInfo.toCity,
-      fromStation: tripInfo.fromStation,
-      toStation: tripInfo.toStation,
-      departureDate: tripInfo.departureDate,
-      arrivalDate: tripInfo.arrivalDate,
-      departureTime: tripInfo.departureTime,
-      arrivalTime: tripInfo.arrivalTime
-    };
-    
-    setSelectedTrain(trainData);
+    // Сохраняем выбранный вагон и места в контекст
     setSelectedWagon(selectedWagon);
     setSelectedSeats(selectedSeats);
     
+    console.log('Сохранены данные:', {
+      wagon: selectedWagon,
+      seats: selectedSeats,
+      total: calculateTotalPrice()
+    });
+    
+    // Переходим на страницу пассажиров
     navigate('/passengers');
   };
 
   const formatPrice = (price) => {
-    return price.toLocaleString('ru-RU');
+    return price ? price.toLocaleString('ru-RU') : '0';
   };
 
-  const getWagonTypeName = (type) => {
-    const types = {
-      sitting: 'Сидячий',
-      platzkart: 'Плацкарт',
-      coupe: 'Купе',
-      lux: 'Люкс'
+  const getDefaultPrice = (type) => {
+    const prices = {
+      'lux': 4950,
+      'coupe': 3820,
+      'platzkart': 2530,
+      'sitting': 1920
     };
-    return types[type] || type;
+    return prices[type] || 2000;
   };
 
-  const isSeatAvailable = (seatNumber) => {
-    const occupiedSeats = [3, 6, 9, 12, 15, 18, 21, 24, 27, 30];
-    return !occupiedSeats.includes(seatNumber);
+  const getMockWagons = () => {
+    return [
+      {
+        id: 'lux-1',
+        number: 1,
+        type: 'lux',
+        name: 'Люкс',
+        totalSeats: 18,
+        availableSeats: 8,
+        price: 4950,
+        features: ['2 места в купе', 'Душ/туалет', 'ТВ', 'Кондиционер', 'Белье включено'],
+        icon: '⭐',
+        seatsPerRow: 2
+      },
+      {
+        id: 'coupe-2',
+        number: 2,
+        type: 'coupe',
+        name: 'Купе',
+        totalSeats: 36,
+        availableSeats: 15,
+        price: 3820,
+        features: ['4 места в купе', 'Кондиционер', 'Розетки', 'Белье включено'],
+        icon: '🚂',
+        seatsPerRow: 4
+      },
+      {
+        id: 'platzkart-3',
+        number: 3,
+        type: 'platzkart',
+        name: 'Плацкарт',
+        totalSeats: 54,
+        availableSeats: 24,
+        price: 2530,
+        features: ['54 места в вагоне', 'Белье включено', 'Общие розетки'],
+        icon: '🛌',
+        seatsPerRow: 9
+      },
+      {
+        id: 'sitting-4',
+        number: 4,
+        type: 'sitting',
+        name: 'Сидячий',
+        totalSeats: 60,
+        availableSeats: 35,
+        price: 1920,
+        features: ['Сидячие места', 'Кондиционер', 'Розетки'],
+        icon: '💺',
+        seatsPerRow: 6
+      }
+    ];
+  };
+
+  // Функция для отображения мест в виде сетки с учетом типа вагона
+  const renderSeatGrid = () => {
+    if (!selectedWagon || seatMap.length === 0) return null;
+
+    const seatsPerRow = selectedWagon.seatsPerRow || 4;
+    const rows = Math.ceil(selectedWagon.totalSeats / seatsPerRow);
+    
+    return (
+      <div className="seat-grid">
+        {Array.from({ length: rows }, (_, rowIndex) => {
+          const rowStart = rowIndex * seatsPerRow + 1;
+          const rowEnd = Math.min(rowStart + seatsPerRow - 1, selectedWagon.totalSeats);
+          
+          return (
+            <div key={`row-${rowIndex}`} className="seat-row">
+              <div className="row-number">Ряд {rowIndex + 1}</div>
+              <div className="row-seats">
+                {Array.from({ length: seatsPerRow }, (_, seatIndex) => {
+                  const seatNumber = rowStart + seatIndex;
+                  if (seatNumber > selectedWagon.totalSeats) {
+                    return <div key={`empty-${seatIndex}`} className="seat-empty"></div>;
+                  }
+                  
+                  const seat = seatMap.find(s => s.number === seatNumber);
+                  const isSelected = selectedSeats.includes(seatNumber);
+                  const isAvailable = seat?.available || false;
+                  
+                  return (
+                    <button
+                      key={seatNumber}
+                      className={`seat ${isSelected ? 'selected' : ''} ${!isAvailable ? 'unavailable' : 'available'}`}
+                      onClick={() => handleSeatSelect(seatNumber)}
+                      disabled={!isAvailable}
+                      title={`Место ${seatNumber} - ${formatPrice(selectedWagon.price)} ₽`}
+                    >
+                      <span className="seat-number">{seatNumber}</span>
+                      {isSelected && <span className="seat-check">✓</span>}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    );
   };
 
   if (loading) {
@@ -163,16 +342,30 @@ function SeatsSelectionPage() {
     );
   }
 
+  if (!selectedTrain) {
+    return (
+      <div className="seats-selection-page error">
+        <div className="error-message">
+          <h2>Поезд не выбран</h2>
+          <p>Пожалуйста, вернитесь на страницу поиска и выберите поезд</p>
+          <button onClick={() => navigate('/search')} className="back-btn">
+            Вернуться к поиску
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="seats-selection-page">
       {/* Шаги оформления */}
       <div className="booking-steps">
-        <div className="step active">
-          <div className="step-number">1</div>
-          <div className="step-name">Маршрут</div>
+        <div className="step completed">
+          <div className="step-number">✓</div>
+          <div className="step-name">Поиск</div>
         </div>
-        <div className="step active">
-          <div className="step-number">2</div>
+        <div className="step completed">
+          <div className="step-number">✓</div>
           <div className="step-name">Поезд</div>
         </div>
         <div className="step active">
@@ -196,79 +389,99 @@ function SeatsSelectionPage() {
             <h1 className="trip-summary__title">Выбор мест в вагоне</h1>
             <div className="trip-summary__info">
               <div className="trip-summary__train">
-                <span className="train-number">Поезд №{tripInfo.trainNumber}</span>
+                <span className="train-number">Поезд №{selectedTrain.number}</span>
                 <span className="train-route">
-                  {tripInfo.fromCity} → {tripInfo.toCity}
+                  {selectedTrain.fromCity} → {selectedTrain.toCity}
                 </span>
               </div>
               
               <div className="trip-summary__details">
                 <div className="trip-detail">
-                  <div className="trip-detail__station">{tripInfo.fromStation}</div>
+                  <div className="trip-detail__station">{selectedTrain.fromStation}</div>
                   <div className="trip-detail__time">
-                    {tripInfo.departureDate}, {tripInfo.departureTime}
+                    {selectedTrain.departureDate || new Date(selectedTrain.departureTime).toLocaleDateString('ru-RU')}, 
+                    {new Date(selectedTrain.departureTime).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })}
                   </div>
                 </div>
                 
                 <div className="trip-detail-separator">↓</div>
                 
                 <div className="trip-detail">
-                  <div className="trip-detail__station">{tripInfo.toStation}</div>
+                  <div className="trip-detail__station">{selectedTrain.toStation}</div>
                   <div className="trip-detail__time">
-                    {tripInfo.arrivalDate}, {tripInfo.arrivalTime}
+                    {selectedTrain.arrivalDate || new Date(selectedTrain.arrivalTime).toLocaleDateString('ru-RU')}, 
+                    {new Date(selectedTrain.arrivalTime).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })}
                   </div>
                 </div>
               </div>
             </div>
           </div>
 
+          {/* Сообщение об ошибке */}
+          {error && (
+            <div className="error-notice">
+              <div className="error-notice__icon">⚠️</div>
+              <div className="error-notice__text">{error}</div>
+            </div>
+          )}
+
           {/* Выбор типа вагона */}
           <div className="wagon-type-section">
             <h2 className="section-title">Выберите тип вагона</h2>
             <p className="section-subtitle">Нажмите на карточку вагона для выбора</p>
             
-            <div className="wagon-type-grid">
-              {wagons.map(wagon => (
-                <div 
-                  key={wagon.id}
-                  className={`wagon-type-card ${selectedWagon?.id === wagon.id ? 'selected' : ''}`}
-                  onClick={() => handleWagonSelect(wagon)}
-                >
-                  <div className="wagon-type-icon">{wagon.icon}</div>
-                  <div className="wagon-type-content">
-                    <h3 className="wagon-type-name">{wagon.name}</h3>
-                    <div className="wagon-type-price">{formatPrice(wagon.price)} ₽</div>
-                    <div className="wagon-type-features">
-                      {wagon.features.map((feature, index) => (
-                        <div key={index} className="wagon-type-feature">
-                          • {feature}
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                  <div className="wagon-type-badge">
-                    <span className="available-seats">
-                      {wagon.availableSeats} мест
-                    </span>
-                  </div>
-                  {selectedWagon?.id === wagon.id && (
-                    <div className="wagon-selected-indicator">
-                      <div className="wagon-selected-check">✓</div>
-                      <span>Выбрано</span>
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
-            
-            {selectedWagon && (
-              <div className="selected-wagon-info">
-                <div className="selected-wagon-summary">
-                  <strong>Выбран:</strong> {selectedWagon.name} вагон №{selectedWagon.number} • 
-                  Цена за место: {formatPrice(selectedWagon.price)} ₽ • 
-                  Свободно мест: {selectedWagon.availableSeats}
-                </div>
+            {availableWagons.length === 0 ? (
+              <div className="no-wagons">
+                <div className="no-wagons-icon">🚂</div>
+                <h3>Нет доступных вагонов</h3>
+                <p>На данный момент нет свободных вагонов в этом поезде</p>
               </div>
+            ) : (
+              <>
+                <div className="wagon-type-grid">
+                  {availableWagons.map(wagon => (
+                    <div 
+                      key={wagon.id}
+                      className={`wagon-type-card ${selectedWagon?.id === wagon.id ? 'selected' : ''}`}
+                      onClick={() => handleWagonSelect(wagon)}
+                    >
+                      <div className="wagon-type-icon">{wagon.icon}</div>
+                      <div className="wagon-type-content">
+                        <h3 className="wagon-type-name">{wagon.name}</h3>
+                        <div className="wagon-type-price">{formatPrice(wagon.price)} ₽</div>
+                        <div className="wagon-type-features">
+                          {wagon.features.slice(0, 2).map((feature, index) => (
+                            <div key={index} className="wagon-type-feature">
+                              • {feature}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                      <div className="wagon-type-badge">
+                        <span className="available-seats">
+                          {wagon.availableSeats} мест
+                        </span>
+                      </div>
+                      {selectedWagon?.id === wagon.id && (
+                        <div className="wagon-selected-indicator">
+                          <div className="wagon-selected-check">✓</div>
+                          <span>Выбрано</span>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+                
+                {selectedWagon && (
+                  <div className="selected-wagon-info">
+                    <div className="selected-wagon-summary">
+                      <strong>Выбран:</strong> {selectedWagon.name} вагон №{selectedWagon.number} • 
+                      Цена за место: {formatPrice(selectedWagon.price)} ₽ • 
+                      Свободно мест: {selectedWagon.availableSeats}
+                    </div>
+                  </div>
+                )}
+              </>
             )}
           </div>
 
@@ -276,9 +489,9 @@ function SeatsSelectionPage() {
           {selectedWagon ? (
             <div className="seat-selection-section">
               <div className="section-header">
-                <h2>Выбор мест в вагоне №{selectedWagon.number}</h2>
+                <h2>Выбор мест в вагоне №{selectedWagon.number} ({selectedWagon.name})</h2>
                 <div className="wagon-info-badge">
-                  <span className="wagon-type">{getWagonTypeName(selectedWagon.type)}</span>
+                  <span className="wagon-type">{selectedWagon.name}</span>
                   <span className="wagon-available">
                     Свободно: {selectedWagon.availableSeats} мест
                   </span>
@@ -286,47 +499,28 @@ function SeatsSelectionPage() {
               </div>
 
               <div className="seat-map-container">
-                <div className="seat-map-placeholder">
-                  <div className="seat-map-message">
-                    <h3>Схема выбора мест</h3>
-                    <p>Выберите места на схеме ниже (максимум 4 места):</p>
-                    
-                    <div className="seat-map-grid">
-                      {Array.from({ length: selectedWagon.totalSeats }, (_, i) => i + 1)
-                        .slice(0, 30)
-                        .map(seatNumber => {
-                          const isSelected = selectedSeats.includes(seatNumber);
-                          const isAvailable = isSeatAvailable(seatNumber);
-                          
-                          return (
-                            <button
-                              key={seatNumber}
-                              className={`seat-button ${isSelected ? 'selected' : ''} ${!isAvailable ? 'unavailable' : 'available'}`}
-                              onClick={() => handleSeatSelect(seatNumber)}
-                              disabled={!isAvailable}
-                            >
-                              <span className="seat-number">{seatNumber}</span>
-                              <span className="seat-price">
-                                {selectedWagon.price.toLocaleString('ru-RU')} ₽
-                              </span>
-                            </button>
-                          );
-                        })}
+                <div className="seat-map-wrapper">
+                  <h3>Схема расположения мест</h3>
+                  <p>Выберите места на схеме (максимум 4 места):</p>
+                  
+                  {renderSeatGrid()}
+                  
+                  <div className="seat-map-legend">
+                    <div className="legend-item">
+                      <div className="legend-color available"></div>
+                      <span>Свободно</span>
                     </div>
-                    
-                    <div className="seat-map-legend">
-                      <div className="legend-item">
-                        <div className="legend-color available"></div>
-                        <span>Свободно</span>
-                      </div>
-                      <div className="legend-item">
-                        <div className="legend-color selected"></div>
-                        <span>Выбрано</span>
-                      </div>
-                      <div className="legend-item">
-                        <div className="legend-color unavailable"></div>
-                        <span>Занято</span>
-                      </div>
+                    <div className="legend-item">
+                      <div className="legend-color selected"></div>
+                      <span>Выбрано</span>
+                    </div>
+                    <div className="legend-item">
+                      <div className="legend-color unavailable"></div>
+                      <span>Занято</span>
+                    </div>
+                    <div className="legend-item">
+                      <div className="legend-color row-number">Ряд</div>
+                      <span>Номер ряда</span>
                     </div>
                   </div>
                 </div>
@@ -463,55 +657,28 @@ function SeatsSelectionPage() {
               <li className="tip">
                 <span className="tip-icon">💺</span>
                 <span className="tip-text">
-                  В сидячих вагонах места распределены по рядам
+                  Нажмите на свободное место, чтобы выбрать его
                 </span>
               </li>
               <li className="tip">
                 <span className="tip-icon">🚂</span>
                 <span className="tip-text">
-                  В купе места 1-2 слева, 3-4 справа
+                  Можно выбрать до 4 мест одновременно
                 </span>
               </li>
               <li className="tip">
-                <span className="tip-icon">⭐</span>
+                <span className="tip-icon">🔁</span>
                 <span className="tip-text">
-                  Люкс вагоны имеют повышенный комфорт
+                  Нажмите на выбранное место, чтобы отменить выбор
                 </span>
               </li>
               <li className="tip">
                 <span className="tip-icon">👥</span>
                 <span className="tip-text">
-                  19 человек сейчас выбирают места в этом поезде
+                  Выбирайте места в одном ряду для удобства
                 </span>
               </li>
             </ul>
-          </div>
-
-          {/* Часто задаваемые вопросы */}
-          <div className="sidebar-card faq-card">
-            <h3>Вопросы и ответы</h3>
-            <div className="faq-content">
-              <div className="faq-item">
-                <div className="faq-question">Можно ли вернуть билет?</div>
-                <div className="faq-answer">
-                  Да, возврат возможен за 8 часов до отправления
-                </div>
-              </div>
-              
-              <div className="faq-item">
-                <div className="faq-question">Есть ли Wi-Fi в поезде?</div>
-                <div className="faq-answer">
-                  В современных вагонах купе и люкс Wi-Fi обычно есть
-                </div>
-              </div>
-              
-              <div className="faq-item">
-                <div className="faq-question">Детские места?</div>
-                <div className="faq-answer">
-                  Дети до 5 лет бесплатно, до 10 лет со скидкой
-                </div>
-              </div>
-            </div>
           </div>
         </aside>
       </div>

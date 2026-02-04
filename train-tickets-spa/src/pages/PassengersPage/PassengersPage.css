@@ -1838,3 +1838,228 @@
     border: 1px solid #ddd;
   }
 }
+
+/* Состояние ошибки */
+.passengers-page.error-state {
+  padding: 40px 0;
+}
+
+.passengers-error-message {
+  text-align: center;
+  padding: 60px 40px;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.passengers-error-message h2 {
+  color: #dc2626;
+  margin-bottom: 16px;
+}
+
+.passengers-error-message p {
+  color: #666;
+  margin-bottom: 32px;
+}
+
+.passengers-error-back-btn {
+  padding: 12px 32px;
+  background: #3b82f6;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.passengers-error-back-btn:hover {
+  background: #2563eb;
+}
+
+/* Заголовок с номером места */
+.passengers-forms__seat-number {
+  font-size: 14px;
+  color: #64748b;
+  font-weight: normal;
+  margin-left: 8px;
+}
+
+/* Спиннер загрузки */
+.passengers-action__spinner {
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-radius: 50%;
+  border-top-color: white;
+  animation: spin 1s ease-in-out infinite;
+  margin-right: 8px;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* API ошибки */
+.passengers-forms__api-error {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 8px;
+  padding: 16px;
+  margin-top: 20px;
+  color: #991b1b;
+}
+
+.passengers-forms__api-error-icon {
+  font-size: 20px;
+  flex-shrink: 0;
+}
+
+.passengers-forms__api-error-text {
+  flex: 1;
+  font-size: 14px;
+}
+
+/* Ошибки валидации с иконкой */
+.passengers-forms__errors-icon {
+  margin-right: 8px;
+  font-size: 16px;
+}
+
+/* Индикаторы заполнения пассажиров */
+.passengers-controls__indicator--filled {
+  position: relative;
+}
+
+.passengers-controls__indicator--filled::after {
+  content: '✓';
+  position: absolute;
+  top: -5px;
+  right: -5px;
+  width: 16px;
+  height: 16px;
+  background: #10b981;
+  color: white;
+  border-radius: 50%;
+  font-size: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Стили для списка пассажиров в деталях поездки */
+.trip-details__passenger-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding: 12px 0;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.trip-details__passenger-item:last-child {
+  border-bottom: none;
+}
+
+.trip-details__passenger-info {
+  flex: 1;
+}
+
+.trip-details__passenger-number {
+  font-size: 12px;
+  color: #64748b;
+  margin-bottom: 4px;
+}
+
+.trip-details__passenger-name {
+  font-weight: 500;
+  color: #334155;
+  margin-bottom: 4px;
+}
+
+.trip-details__passenger-seat {
+  font-size: 12px;
+  color: #64748b;
+}
+
+.trip-details__passenger-price {
+  font-weight: 600;
+  color: #3b82f6;
+  white-space: nowrap;
+  margin-left: 16px;
+}
+
+/* Улучшенные стили для сводной информации */
+.passengers-summary__item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 0;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.passengers-summary__item:last-child {
+  border-bottom: none;
+}
+
+.passengers-summary__label {
+  color: #64748b;
+  font-size: 14px;
+}
+
+.passengers-summary__value {
+  color: #334155;
+  font-weight: 500;
+  text-align: right;
+  max-width: 60%;
+  word-break: break-word;
+}
+
+.passengers-summary__value--price {
+  color: #3b82f6;
+  font-weight: 600;
+  font-size: 16px;
+}
+
+/* Адаптивные стили */
+@media (max-width: 768px) {
+  .passengers-page__container {
+    flex-direction: column;
+  }
+  
+  .passengers-page__sidebar {
+    order: -1;
+    margin-bottom: 24px;
+  }
+  
+  .trip-details__passenger-item {
+    flex-direction: column;
+    gap: 8px;
+  }
+  
+  .trip-details__passenger-price {
+    margin-left: 0;
+    align-self: flex-end;
+  }
+  
+  .passengers-controls__navigation {
+    flex-direction: column;
+    gap: 12px;
+  }
+  
+  .passengers-controls__indicators {
+    order: -1;
+  }
+  
+  .passengers-forms__seat-number {
+    display: block;
+    margin-left: 0;
+    margin-top: 4px;
+  }
+}

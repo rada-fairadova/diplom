@@ -826,3 +826,19 @@
   flex: 1;
   font-size: 14px;
 }
+
+/* Адаптивные стили для фильтров */
+@media (max-width: 768px) {
+  .filters__options--grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
+  .search-results__header {
+    flex-direction: column;
+    gap: 16px;
+  }
+  
+  .search-results__sort {
+    align-self: flex-start;
+  }
+}

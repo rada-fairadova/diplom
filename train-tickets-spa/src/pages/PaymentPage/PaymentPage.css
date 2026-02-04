@@ -588,3 +588,199 @@
     align-items: center;
   }
 }
+
+/* Состояние ошибки */
+.payment-page.error-state {
+  padding: 40px 0;
+}
+
+.payment-error-message {
+  text-align: center;
+  padding: 60px 40px;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.payment-error-message h2 {
+  color: #dc2626;
+  margin-bottom: 16px;
+}
+
+.payment-error-message p {
+  color: #666;
+  margin-bottom: 32px;
+}
+
+.payment-error-back-btn {
+  padding: 12px 32px;
+  background: #3b82f6;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.payment-error-back-btn:hover {
+  background: #2563eb;
+}
+
+/* Стили для индикатора обработки */
+.payment-processing {
+  background: #f0f9ff;
+  border: 1px solid #bae6fd;
+  border-radius: 8px;
+  padding: 24px;
+  text-align: center;
+  margin-bottom: 24px;
+}
+
+.payment-processing__spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid #e0f2fe;
+  border-top-color: #3b82f6;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin: 0 auto 16px;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.payment-processing__text {
+  color: #0369a1;
+  font-weight: 500;
+  margin-bottom: 8px;
+}
+
+.payment-processing__note {
+  color: #64748b;
+  font-size: 14px;
+}
+
+/* Улучшенные стили для списка пассажиров */
+.order-summary__passenger-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 0;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.order-summary__passenger-item:last-child {
+  border-bottom: none;
+}
+
+.order-summary__passenger-name {
+  font-weight: 500;
+  color: #334155;
+}
+
+.order-summary__passenger-type {
+  color: #64748b;
+  font-size: 14px;
+  margin-left: 8px;
+}
+
+/* Стили для логотипов платежных систем */
+.payment-security__logos {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  margin-top: 20px;
+  padding-top: 20px;
+  border-top: 1px solid #e5e7eb;
+}
+
+.payment-security__logo {
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-weight: 600;
+  font-size: 14px;
+  text-transform: uppercase;
+}
+
+.payment-security__logo.visa {
+  background: #1a1f71;
+  color: white;
+}
+
+.payment-security__logo.mastercard {
+  background: #eb001b;
+  color: white;
+}
+
+.payment-security__logo.mir {
+  background: #1e5cb3;
+  color: white;
+}
+
+/* Стили для условий возврата */
+.payment-refund {
+  background: #f9fafb;
+  border-radius: 8px;
+  padding: 20px;
+  margin-bottom: 24px;
+  border: 1px solid #e5e7eb;
+}
+
+.payment-refund__title {
+  font-size: 16px;
+  font-weight: 600;
+  margin-bottom: 16px;
+  color: #374151;
+}
+
+.payment-refund__item {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.payment-refund__item:last-child {
+  margin-bottom: 0;
+}
+
+.payment-refund__icon {
+  font-size: 20px;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.payment-refund__text {
+  color: #6b7280;
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+/* Адаптивные стили */
+@media (max-width: 768px) {
+  .payment-page__container {
+    flex-direction: column;
+  }
+  
+  .payment-page__sidebar {
+    order: -1;
+    margin-bottom: 24px;
+  }
+  
+  .order-summary__passenger-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+  }
+  
+  .payment-security__logos {
+    flex-wrap: wrap;
+  }
+}
